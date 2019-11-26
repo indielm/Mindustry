@@ -354,6 +354,8 @@ public class Conveyor extends Block implements Autotiler{
 
         float clogHeat = 0f;
 
+        public float getClogHeat() { return clogHeat;}
+
         @Override
         public void write(DataOutput stream) throws IOException{
             super.write(stream);

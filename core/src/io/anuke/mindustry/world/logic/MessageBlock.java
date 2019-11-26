@@ -10,6 +10,7 @@ import io.anuke.arc.scene.ui.*;
 import io.anuke.arc.scene.ui.layout.*;
 import io.anuke.arc.util.*;
 import io.anuke.arc.util.pooling.*;
+import io.anuke.mindustry.content.Blocks;
 import io.anuke.mindustry.entities.*;
 import io.anuke.mindustry.entities.type.*;
 import io.anuke.mindustry.gen.*;
@@ -17,13 +18,14 @@ import io.anuke.mindustry.net.*;
 import io.anuke.mindustry.ui.*;
 import io.anuke.mindustry.ui.dialogs.*;
 import io.anuke.mindustry.world.*;
+import io.anuke.mindustry.world.logic.CustomBlock.CustomBlock;
 
 import java.io.*;
 
 import static io.anuke.mindustry.Vars.*;
 
 public class MessageBlock extends Block{
-    protected static int maxTextLength = 220;
+    public static int maxTextLength = 220;
     protected static int maxNewlines = 24;
 
     public MessageBlock(String name){
@@ -31,6 +33,7 @@ public class MessageBlock extends Block{
         configurable = true;
         solid = true;
         destructible = true;
+        update = true;
         entityType = MessageBlockEntity::new;
     }
 
@@ -62,10 +65,24 @@ public class MessageBlock extends Block{
         }
 
         MessageBlockEntity entity = tile.entity();
-        if(entity != null){
+        if(entity != null && (player!=null)){
             entity.message = result.toString();
             entity.lines = entity.message.split("\n");
+            entity.setCustom();
         }
+    }
+
+    @Override
+    public void removed(Tile tile){
+        MessageBlockEntity entity = tile.entity();
+        if (entity.custom !=null) entity.custom.removed();
+    }
+
+    @Override
+    public void update(Tile tile){
+        MessageBlockEntity entity = tile.entity();
+        if (entity.custom !=null) entity.custom.update();
+
     }
 
     @Override
@@ -147,8 +164,9 @@ public class MessageBlock extends Block{
     }
 
     public class MessageBlockEntity extends TileEntity{
-        protected String message = "";
-        protected String[] lines = {""};
+        public String message = "";
+        public String[] lines = {""};
+        public CustomBlock custom;
 
         @Override
         public void write(DataOutput stream) throws IOException{
@@ -160,6 +178,18 @@ public class MessageBlock extends Block{
         public void read(DataInput stream, byte revision) throws IOException{
             super.read(stream, revision);
             message = stream.readUTF();
+        }
+
+        void setCustom(){
+            custom = selectCustom();
+            if ((custom != null) && (!custom.validPlace())) {
+                custom = null;
+                Call.onDeconstructFinish(tile, Blocks.message,0);
+            }
+        }
+
+        CustomBlock selectCustom(){
+            return CustomBlock.selectCustom(message, tile);
         }
     }
 }

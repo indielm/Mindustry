@@ -277,7 +277,7 @@ public class PowerNode extends PowerBlock{
         Draw.reset();
     }
 
-    protected boolean linked(Tile tile, Tile other){
+    public boolean linked(Tile tile, Tile other){
         return tile.entity.power.links.contains(other.pos());
     }
 

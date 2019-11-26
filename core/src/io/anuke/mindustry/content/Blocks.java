@@ -21,7 +21,7 @@ import io.anuke.mindustry.world.blocks.defense.turrets.*;
 import io.anuke.mindustry.world.blocks.distribution.*;
 import io.anuke.mindustry.world.blocks.liquid.Conduit;
 import io.anuke.mindustry.world.blocks.liquid.LiquidTank;
-import io.anuke.mindustry.world.blocks.logic.*;
+import io.anuke.mindustry.world.blocks.logic.MessageBlock;
 import io.anuke.mindustry.world.blocks.power.*;
 import io.anuke.mindustry.world.blocks.production.*;
 import io.anuke.mindustry.world.blocks.sandbox.*;

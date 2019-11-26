@@ -1,4 +1,4 @@
-package io.anuke.mindustry.world.blocks.logic;
+package io.anuke.mindustry.world.logic;
 
 import io.anuke.mindustry.world.Block;
 

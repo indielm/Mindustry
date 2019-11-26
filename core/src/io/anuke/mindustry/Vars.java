@@ -21,6 +21,7 @@ import io.anuke.mindustry.maps.*;
 import io.anuke.mindustry.mod.*;
 import io.anuke.mindustry.net.Net;
 import io.anuke.mindustry.world.blocks.defense.ForceProjector.*;
+import io.anuke.mindustry.world.logic.CustomBlock.CustomBlock;
 
 import java.nio.charset.*;
 import java.util.*;
@@ -181,6 +182,8 @@ public class Vars implements Loadable{
     public static EntityGroup<BaseUnit>[] unitGroups;
 
     public static Player player;
+
+    public static ArrayList<CustomBlock> d2registry = new ArrayList<>();
 
     @Override
     public void loadAsync(){
