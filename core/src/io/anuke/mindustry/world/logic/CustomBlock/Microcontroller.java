@@ -7,7 +7,7 @@ import io.anuke.mindustry.world.blocks.logic.MessageBlock.MessageBlockEntity;
 
 import java.util.HashMap;
 
-public class Microcontroller extends CustomBlock {
+class Microcontroller extends CustomBlock{
     Tile[] pins, porta, portb;
     Tile step, run, reset , solar, vcc, code, console, vars;
     Interpreter interpreter;
@@ -71,7 +71,7 @@ public class Microcontroller extends CustomBlock {
 
     void updateCodeText(){
         String codeMsg = "";
-        String rawLines[] = ((MessageBlockEntity)code.entity()).message.split("\n");
+        String[] rawLines = ((MessageBlockEntity) code.entity()).message.split("\n");
         for (int z = 0; z < rawLines.length;z++){
             rawLines[z]=rawLines[z].replace(carrot, "");
             codeMsg += (z == interpreter.i-1 ? carrot : "") + rawLines[z] + "\n";
@@ -238,7 +238,7 @@ public class Microcontroller extends CustomBlock {
             return vals.containsKey(s) ? vals.get(s) : Integer.parseInt(s);
         }
 
-        void loadCode(String rawLines[]) {
+        void loadCode(String[] rawLines){
             consoleMsg = "";
             consoleOut("");
             vals = new HashMap<>();
