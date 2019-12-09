@@ -84,7 +84,7 @@ public class Blocks implements ContentList{
     dartPad, deltaPad, tauPad, omegaPad, javelinPad, tridentPad, glaivePad,
 
     //logic
-    switchBlock, signalBlock, analyzer, controller, relay, notGate, andGate, orGate, xorGate, adder, subtractor, divider, multiplier;
+    switchBlock, signalBlock, signalNode, signalRouter, analyzer, controller, relay, notGate, andGate, orGate, xorGate, adder, subtractor, divider, remainder, multiplier, equalizer, comparator, fontSignal, displayBlock;
 
     @Override
     public void load(){
@@ -1845,6 +1845,17 @@ public class Blocks implements ContentList{
             requirements(Category.effect, ItemStack.with(Items.lead, 4));
         }};
 
+        signalRouter = new AcceptorLogicBlock("signal-router"){{
+            requirements(Category.effect, ItemStack.with(Items.lead, 4));
+            doOutput = true;
+            rotate = false;
+        }};
+
+        signalNode = new NodeLogicBlock("signal-node"){{
+            requirements(Category.effect, ItemStack.with(Items.lead, 4));
+            range = 110f;
+        }};
+
         analyzer = new AnalyzerBlock("analyzer"){{
             requirements(Category.effect, ItemStack.with(Items.lead, 4));
         }};
@@ -1853,10 +1864,8 @@ public class Blocks implements ContentList{
             requirements(Category.effect, ItemStack.with(Items.lead, 4));
         }};
 
-        relay = new UnaryLogicBlock("relay"){{
+        relay = new RelayBlock("relay"){{
             requirements(Category.effect, ItemStack.with(Items.lead, 4));
-
-            processor = input -> input;
         }};
 
         notGate = new UnaryLogicBlock("not-gate"){{
@@ -1904,13 +1913,38 @@ public class Blocks implements ContentList{
             processor = (left, right) -> right == 0 ? 0 : left / right;
         }};
 
+        remainder = new BinaryLogicBlock("remainder"){{
+            requirements(Category.effect, ItemStack.with(Items.lead, 4));
+
+            processor = (left, right) -> right == 0 ? 0 : left % right;
+        }};
+
         multiplier = new BinaryLogicBlock("multiplier"){{
             requirements(Category.effect, ItemStack.with(Items.lead, 4));
 
             processor = (left, right) -> left * right;
         }};
 
+        equalizer = new BinaryLogicBlock("equalizer"){{
+            requirements(Category.effect, ItemStack.with(Items.lead, 4));
 
+            processor = (left, right) -> left == right ? 1 : 0;
+        }};
+
+        comparator = new BinaryLogicBlock("comparator"){{
+            requirements(Category.effect, ItemStack.with(Items.lead, 4));
+
+            processor = (left, right) -> left > right ? 1 : 0;
+        }};
+
+        fontSignal = new FontSignalBlock("font-signal"){{
+            requirements(Category.effect, ItemStack.with(Items.lead, 4));
+        }};
+
+        displayBlock = new DisplayBlock("display"){{
+            requirements(Category.effect, ItemStack.with(Items.lead, 4));
+            size = 2;
+        }};
 
         //endregion
     }

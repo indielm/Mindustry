@@ -1,5 +1,6 @@
 package io.anuke.mindustry.world.blocks.logic;
 
+import io.anuke.annotations.Annotations.*;
 import io.anuke.arc.*;
 import io.anuke.arc.graphics.*;
 import io.anuke.arc.graphics.g2d.*;
@@ -15,6 +16,7 @@ import io.anuke.mindustry.world.meta.*;
 import java.io.*;
 
 public abstract class LogicBlock extends Block{
+    protected boolean doOutput = true;
 
     public LogicBlock(String name){
         super(name);
@@ -25,17 +27,19 @@ public abstract class LogicBlock extends Block{
         controllable = false;
     }
 
+    @CallSuper
     @Override
     public void update(Tile tile){
         LogicEntity entity = tile.entity();
-        entity.signal = signal(tile);
+        entity.lastSignal = entity.nextSignal;
+        entity.nextSignal = signal(tile);
     }
 
     @Override
     public void setBars(){
         super.setBars();
         bars.add("signal", entity -> new Bar(
-        () -> Core.bundle.format("block.signal", ((LogicEntity)entity).signal),
+        () -> Core.bundle.format("block.signal", ((LogicEntity)entity).nextSignal),
         () -> Color.clear,
         () -> 0));
     }
@@ -45,7 +49,7 @@ public abstract class LogicBlock extends Block{
         LogicEntity entity = tile.entity();
         Draw.rect("logic-base", tile.drawx(), tile.drawy());
 
-        Draw.color(entity.signal > 0 ? Pal.accent : Color.white);
+        Draw.color(entity.nextSignal > 0 ? Pal.accent : Color.white);
         super.draw(tile);
         Draw.color();
     }
@@ -68,43 +72,47 @@ public abstract class LogicBlock extends Block{
         !rotate ? 0 : req.rotation * 90);
     }
 
-    public int getSignal(Tile tile){
-        if(tile == null || !(tile.block() instanceof LogicBlock)) return 0;
-        return tile.<LogicEntity>entity().signal;
+    public int getSignal(Tile from, Tile tile){
+        return !canSignal(from, tile) ? 0 : tile.<LogicEntity>entity().lastSignal;
+    }
+
+    public boolean canSignal(Tile from, Tile tile){
+        return tile != null && tile.block() instanceof LogicBlock && (!tile.block().rotate || tile.front() == from) && ((LogicBlock)tile.block()).doOutput;
     }
 
     public int sfront(Tile tile){
-        return getSignal(tile.front());
+        return getSignal(tile, tile.front());
     }
 
     public int sback(Tile tile){
-        return getSignal(tile.back());
+        return getSignal(tile, tile.back());
     }
 
     public int sleft(Tile tile){
-        return getSignal(tile.left());
+        return getSignal(tile, tile.left());
     }
 
     public int sright(Tile tile){
-        return getSignal(tile.right());
+        return getSignal(tile, tile.right());
     }
 
     /** @return signal to send next frame. */
     public abstract int signal(Tile tile);
 
     public class LogicEntity extends TileEntity{
-        public int signal;
+        public int nextSignal;
+        public int lastSignal;
 
         @Override
         public void write(DataOutput stream) throws IOException{
             super.write(stream);
-            stream.writeInt(signal);
+            stream.writeInt(nextSignal);
         }
 
         @Override
         public void read(DataInput stream, byte revision) throws IOException{
             super.read(stream, revision);
-            signal = stream.readInt();
+            nextSignal = lastSignal = stream.readInt();
         }
     }
 }
