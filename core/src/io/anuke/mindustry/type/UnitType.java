@@ -51,7 +51,6 @@ public class UnitType extends UnlockableContent{
 
     public <T extends BaseUnit> UnitType(String name){
         super(name);
-        this.description = Core.bundle.getOrNull("unit." + name + ".description");
     }
 
     public <T extends BaseUnit> void create(Prov<T> mainConstructor){
@@ -63,11 +62,6 @@ public class UnitType extends UnlockableContent{
     @Override
     public void displayInfo(Table table){
         ContentDisplay.displayUnit(table, this);
-    }
-
-    @Override
-    public String localizedName(){
-        return Core.bundle.get("unit." + name + ".name");
     }
 
     @Override

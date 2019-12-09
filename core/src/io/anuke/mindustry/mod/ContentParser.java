@@ -1,6 +1,7 @@
 package io.anuke.mindustry.mod;
 
 import io.anuke.arc.*;
+import io.anuke.arc.assets.*;
 import io.anuke.arc.audio.*;
 import io.anuke.arc.audio.mock.*;
 import io.anuke.arc.collection.Array;
@@ -51,6 +52,11 @@ public class ContentParser{
                 }
             }
         });
+        put(StatusEffect.class, (type, data) -> {
+            StatusEffect effect = new StatusEffect();
+            readFields(effect, data);
+            return effect;
+        });
         put(Color.class, (type, data) -> Color.valueOf(data.asString()));
         put(BulletType.class, (type, data) -> {
             if(data.isString()){
@@ -69,9 +75,9 @@ public class ContentParser{
             String name = "sounds/" + data.asString();
             String path = Vars.tree.get(name + ".ogg").exists() && !Vars.ios ? name + ".ogg" : name + ".mp3";
             ModLoadingSound sound = new ModLoadingSound();
-            Core.assets.load(path, Sound.class).loaded = result -> {
-                sound.sound = (Sound)result;
-            };
+            AssetDescriptor<?> desc = Core.assets.load(path, Sound.class);
+            desc.loaded = result -> sound.sound = (Sound)result;
+            desc.errored = Throwable::printStackTrace;
             return sound;
         });
         put(Objective.class, (type, data) -> {
@@ -159,28 +165,34 @@ public class ContentParser{
 
             Block block;
 
-            if(Vars.content.getByName(ContentType.block, name) != null){
-                block = Vars.content.getByName(ContentType.block, name);
+            if(locate(ContentType.block, name) != null){
+                block = locate(ContentType.block, name);
 
                 if(value.has("type")){
-                    throw new IllegalArgumentException("When overwriting an existing block, you must not re-declare its type. The original type will be used. Block: " + name);
+                    throw new IllegalArgumentException("When defining properties for an existing block, you must not re-declare its type. The original type will be used. Block: " + name);
                 }
             }else{
                 //TODO generate dynamically instead of doing.. this
-                Class<? extends Block> type = resolve(getType(value),
-                "io.anuke.mindustry.world",
-                "io.anuke.mindustry.world.blocks",
-                "io.anuke.mindustry.world.blocks.defense",
-                "io.anuke.mindustry.world.blocks.defense.turrets",
-                "io.anuke.mindustry.world.blocks.distribution",
-                "io.anuke.mindustry.world.blocks.liquid",
-                "io.anuke.mindustry.world.blocks.logic",
-                "io.anuke.mindustry.world.blocks.power",
-                "io.anuke.mindustry.world.blocks.production",
-                "io.anuke.mindustry.world.blocks.sandbox",
-                "io.anuke.mindustry.world.blocks.storage",
-                "io.anuke.mindustry.world.blocks.units"
-                );
+                Class<? extends Block> type;
+
+                try{
+                    type = resolve(getType(value),
+                    "io.anuke.mindustry.world",
+                    "io.anuke.mindustry.world.blocks",
+                    "io.anuke.mindustry.world.blocks.defense",
+                    "io.anuke.mindustry.world.blocks.defense.turrets",
+                    "io.anuke.mindustry.world.blocks.distribution",
+                    "io.anuke.mindustry.world.blocks.liquid",
+                    "io.anuke.mindustry.world.blocks.logic",
+                    "io.anuke.mindustry.world.blocks.power",
+                    "io.anuke.mindustry.world.blocks.production",
+                    "io.anuke.mindustry.world.blocks.sandbox",
+                    "io.anuke.mindustry.world.blocks.storage",
+                    "io.anuke.mindustry.world.blocks.units"
+                    );
+                }catch(IllegalArgumentException e){
+                    type = Block.class;
+                }
 
                 block = make(type, mod + "-" + name);
             }
@@ -228,6 +240,9 @@ public class ContentParser{
 
                     postreads.add(() -> {
                         TechNode parnode = TechTree.all.find(t -> t.block == parent);
+                        if(parnode == null){
+                            throw new ModLoadException("Block '" + parent.name + "' isn't in the tech tree, but '" + block.name + "' requires it to be researched.", block);
+                        }
                         if(!parnode.children.contains(baseNode)){
                             parnode.children.add(baseNode);
                         }
@@ -377,14 +392,19 @@ public class ContentParser{
         }
 
         currentMod = mod;
-        boolean exists = Vars.content.getByName(type, name) != null;
+        boolean located = locate(type, name) != null;
         Content c = parsers.get(type).parse(mod.name, name, value);
         toBeParsed.add(c);
-        if(!exists){
+        if(!located){
             c.sourceFile = file;
             c.mod = mod;
         }
         return c;
+    }
+
+    private <T extends MappableContent> T locate(ContentType type, String name){
+        T first = Vars.content.getByName(type, name); //try vanilla replacement
+        return first != null ? first : Vars.content.getByName(type, currentMod.name + "-" + name);
     }
 
     private <T> T make(Class<T> type){
@@ -474,7 +494,7 @@ public class ContentParser{
             FieldMetadata metadata = fields.get(child.name().replace(" ", "_"));
             if(metadata == null){
                 if(ignoreUnknownFields){
-                    Log.err("{0}: Ignoring unknown field: " + child.name + " (" + type.getName() + ")", object);
+                    Log.warn("{0}: Ignoring unknown field: " + child.name + " (" + type.getName() + ")", object);
                     continue;
                 }else{
                     SerializationException ex = new SerializationException("Field not found: " + child.name + " (" + type.getName() + ")");
