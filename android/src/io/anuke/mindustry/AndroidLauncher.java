@@ -9,7 +9,6 @@ import android.os.Build.*;
 import android.os.*;
 import android.provider.Settings.*;
 import android.telephony.*;
-import com.faendir.rhino_android.*;
 import io.anuke.arc.*;
 import io.anuke.arc.backends.android.surfaceview.*;
 import io.anuke.arc.files.*;
@@ -68,7 +67,7 @@ public class AndroidLauncher extends AndroidApplication{
 
             @Override
             public org.mozilla.javascript.Context getScriptContext(){
-                return new RhinoAndroidHelper(Core.files.local("script-output").file()).enterContext();
+                return AndroidRhinoContext.enter(getContext().getCacheDir());
             }
 
             @Override

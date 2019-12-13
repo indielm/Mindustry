@@ -36,6 +36,19 @@ import java.lang.reflect.*;
 public class ContentParser{
     private static final boolean ignoreUnknownFields = true;
     private ObjectMap<Class<?>, ContentType> contentTypes = new ObjectMap<>();
+    private StringMap legacyUnitMap = StringMap.of(
+    "Dagger", "GroundUnit",
+    "Eruptor", "GroundUnit",
+    "Titan", "GroundUnit",
+    "Fortress", "GroundUnit",
+    "Crawler", "GroundUnit",
+    "Revenant", "HoverUnit",
+    "Draug", "MinerDrone",
+    "Phantom", "BuilderDrone",
+    "Spirit", "RepairDrone",
+    "Wraith", "FlyingUnit",
+    "Ghoul", "FlyingUnit"
+    );
     private ObjectMap<Class<?>, FieldParser> classParsers = new ObjectMap<Class<?>, FieldParser>(){{
         put(Effect.class, (type, data) -> field(Fx.class, data));
         put(StatusEffect.class, (type, data) -> field(StatusEffects.class, data));
@@ -53,7 +66,11 @@ public class ContentParser{
             }
         });
         put(StatusEffect.class, (type, data) -> {
-            StatusEffect effect = new StatusEffect();
+            Object result = fieldOpt(StatusEffects.class, data);
+            if(result != null){
+                return result;
+            }
+            StatusEffect effect = new StatusEffect(currentMod.name + "-" + data.getString("name"));
             readFields(effect, data);
             return effect;
         });
@@ -233,6 +250,10 @@ public class ContentParser{
 
                 readFields(block, value, true);
 
+                if(block.size > 8){
+                    throw new IllegalArgumentException("Blocks cannot be larger than 8x8.");
+                }
+
                 //add research tech node
                 if(research[0] != null){
                     Block parent = find(ContentType.block, research[0]);
@@ -260,8 +281,14 @@ public class ContentParser{
         ContentType.unit, (TypeParser<UnitType>)(mod, name, value) -> {
             readBundle(ContentType.unit, name, value);
 
-            Class<BaseUnit> type = resolve(getType(value), "io.anuke.mindustry.entities.type.base");
-            UnitType unit = new UnitType(mod + "-" + name, supply(type));
+            UnitType unit;
+            if(locate(ContentType.unit, name) == null){
+                Class<BaseUnit> type = resolve(legacyUnitMap.get(Strings.capitalize(getType(value)), getType(value)), "io.anuke.mindustry.entities.type.base");
+                unit = new UnitType(mod + "-" + name, supply(type));
+            }else{
+                unit = locate(ContentType.unit, name);
+            }
+
             currentContent = unit;
             read(() -> readFields(unit, value, true));
 
